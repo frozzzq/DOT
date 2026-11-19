@@ -3,10 +3,12 @@ package com.dot.app.presentation.emergency
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dot.app.domain.model.CyclePrediction
+import com.dot.app.domain.model.DailyLog
 import com.dot.app.domain.model.EmergencyCompoundType
 import com.dot.app.domain.model.EmergencyContraceptionLog
 import com.dot.app.domain.model.EmpatheticMessage
 import com.dot.app.domain.repository.CycleRepository
+import com.dot.app.domain.repository.DailyLogRepository
 import com.dot.app.domain.repository.EmergencyContraceptionRepository
 import com.dot.app.domain.repository.UserProfileRepository
 import com.dot.app.domain.usecase.CalculateContextualCycleUseCase
@@ -49,6 +51,7 @@ data class EmergencyUiState(
 @HiltViewModel
 class EmergencyViewModel @Inject constructor(
     private val emergencyContraceptionRepository: EmergencyContraceptionRepository,
+    private val dailyLogRepository: DailyLogRepository,
     private val userProfileRepository: UserProfileRepository,
     private val cycleRepository: CycleRepository,
     private val calculateContextualCycleUseCase: CalculateContextualCycleUseCase,
@@ -161,6 +164,12 @@ class EmergencyViewModel @Inject constructor(
             )
 
             emergencyContraceptionRepository.upsertEvent(event)
+
+            // Marcar también el día en el registro diario para que se visualice en Hoy y Calendario
+            val existingDayLog = dailyLogRepository.observeLogByDate(currentState.takenDate).first()
+            dailyLogRepository.upsertDailyLog(
+                (existingDayLog ?: DailyLog(date = currentState.takenDate)).copy(tookEmergencyPill = true)
+            )
 
             // Marcar el ciclo actual como alterado por anticoncepción de emergencia (RF-07)
             val latestCycle = cycleRepository.getLatestCycle()

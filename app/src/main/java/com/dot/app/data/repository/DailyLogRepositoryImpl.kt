@@ -9,14 +9,22 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class DailyLogRepositoryImpl @Inject constructor(
     private val dailyLogDao: DailyLogDao
 ) : DailyLogRepository {
 
-    override fun observeLogsBetween(startDate: LocalDate, endDate: LocalDate): Flow<List<DailyLog>> =
-        dailyLogDao.observeLogsBetween(startDate, endDate).map { list ->
-            list.map { it.toDomain() }
+    override fun observeAllLogs(): Flow<List<DailyLog>> =
+        dailyLogDao.observeAllLogs().map { entities -> entities.map { it.toDomain() } }
+
+    override fun observeLogsBetween(
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Flow<List<DailyLog>> =
+        dailyLogDao.observeLogsBetween(startDate, endDate).map { entities ->
+            entities.map { it.toDomain() }
         }
 
     override fun observeLogByDate(date: LocalDate): Flow<DailyLog?> =
@@ -24,6 +32,10 @@ class DailyLogRepositoryImpl @Inject constructor(
 
     override suspend fun upsertDailyLog(log: DailyLog) {
         dailyLogDao.upsertDailyLog(log.toEntity())
+    }
+
+    override suspend fun upsertDailyLogs(logs: List<DailyLog>) {
+        dailyLogDao.upsertDailyLogs(logs.map { it.toEntity() })
     }
 
     override suspend fun deleteDailyLog(date: LocalDate) {

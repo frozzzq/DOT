@@ -14,18 +14,20 @@ enum class PredictionConfidenceContext {
 
 /**
  * Resultado del cálculo contextual de ciclo (RF-04).
- *
- * En lugar de exponer un único día rígido que cause ansiedad ante variaciones normales,
- * define una ventana estimada ([estimatedWindowStart] a [estimatedWindowEnd]) junto con
- * la fecha central de referencia y el contexto fisiológico activo.
  */
 data class CyclePrediction(
     val referenceCycleStartDate: LocalDate,
     val currentDayOfCycle: Int,
+    val expectedCycleLengthDays: Int,
     val baselineExpectedDate: LocalDate,
     val estimatedWindowStart: LocalDate,
     val estimatedWindowEnd: LocalDate,
     val expectedBleedingDurationDays: Int,
+    val currentPhase: CyclePhase,
+    val isCurrentlyMenstruating: Boolean,
+    val estimatedOvulationDate: LocalDate? = null,
+    val fertileWindowStart: LocalDate? = null,
+    val fertileWindowEnd: LocalDate? = null,
     val confidenceContext: PredictionConfidenceContext,
     val activeEmergencyContraception: EmergencyContraceptionLog? = null,
     val daysPastBaselineDate: Int = 0,

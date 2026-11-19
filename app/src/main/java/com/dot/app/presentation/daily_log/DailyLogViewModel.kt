@@ -32,18 +32,15 @@ data class DailyLogUiState(
     val selectedSymptoms: Set<Symptom> = emptySet(),
     val hadSexualActivity: Boolean = false,
     val protectionUsed: ProtectionMethod = ProtectionMethod.NONE,
+    val tookContraceptivePill: Boolean = false,
+    val tookEmergencyPill: Boolean = false,
     val notes: String = "",
-    val recentDates: List<LocalDate> = (0L..6L).map { LocalDate.now().minusDays(it) },
+    val recentDates: List<LocalDate> = (0L..5L).map { LocalDate.now().minusDays(it) },
     val isSaving: Boolean = false,
+    val savedSuccessfully: Boolean = false,
     val feedbackMessage: String? = null
 )
 
-/**
- * ViewModel para el registro diario y edición de eventos por fecha (RF-02, RF-08).
- * Permite capturar o corregir flujo menstrual, síntomas físicos/anímicos, actividad sexual
- * y protección utilizada en cualquier fecha, sincronizando automáticamente el inicio de ciclo
- * cuando se registra sangrado menstrual.
- */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class DailyLogViewModel @Inject constructor(
@@ -69,9 +66,7 @@ class DailyLogViewModel @Inject constructor(
     private fun observeLogForSelectedDate() {
         viewModelScope.launch(Dispatchers.IO) {
             selectedDateFlow
-                .flatMapLatest { date ->
-                    dailyLogRepository.observeLogByDate(date)
-                }
+                .flatMapLatest { date -> dailyLogRepository.observeLogByDate(date) }
                 .collectLatest { existingLog ->
                     val currentDate = selectedDateFlow.value
                     if (existingLog != null) {
@@ -83,6 +78,8 @@ class DailyLogViewModel @Inject constructor(
                                 selectedSymptoms = existingLog.symptoms.toSet(),
                                 hadSexualActivity = existingLog.hadSexualActivity,
                                 protectionUsed = existingLog.protectionUsed,
+                                tookContraceptivePill = existingLog.tookContraceptivePill,
+                                tookEmergencyPill = existingLog.tookEmergencyPill,
                                 notes = existingLog.notes.orEmpty()
                             )
                         }
@@ -95,6 +92,8 @@ class DailyLogViewModel @Inject constructor(
                                 selectedSymptoms = emptySet(),
                                 hadSexualActivity = false,
                                 protectionUsed = ProtectionMethod.NONE,
+                                tookContraceptivePill = false,
+                                tookEmergencyPill = false,
                                 notes = ""
                             )
                         }
@@ -105,9 +104,7 @@ class DailyLogViewModel @Inject constructor(
 
     fun onDateSelected(date: LocalDate) {
         if (date.isAfter(LocalDate.now())) {
-            _uiState.update {
-                it.copy(feedbackMessage = "Solo puedes registrar fechas hasta el día de hoy.")
-            }
+            _uiState.update { it.copy(feedbackMessage = "Solo puedes registrar hasta el día de hoy.") }
             return
         }
         _uiState.update { it.copy(feedbackMessage = null) }
@@ -115,41 +112,37 @@ class DailyLogViewModel @Inject constructor(
     }
 
     fun onFlowLevelSelected(flowLevel: FlowLevel) {
-        _uiState.update {
-            it.copy(flowLevel = flowLevel, feedbackMessage = null)
-        }
+        _uiState.update { it.copy(flowLevel = flowLevel, feedbackMessage = null) }
     }
 
     fun onSymptomToggled(symptom: Symptom) {
         _uiState.update { current ->
             val updated = current.selectedSymptoms.toMutableSet()
-            if (!updated.add(symptom)) {
-                updated.remove(symptom)
-            }
+            if (!updated.add(symptom)) updated.remove(symptom)
             current.copy(selectedSymptoms = updated, feedbackMessage = null)
         }
     }
 
-    fun onSexualActivityChanged(hadActivity: Boolean) {
-        _uiState.update { current ->
-            current.copy(
-                hadSexualActivity = hadActivity,
-                protectionUsed = if (hadActivity) current.protectionUsed else ProtectionMethod.NONE,
+    fun onQuickSexOptionSelected(hadSex: Boolean, protection: ProtectionMethod) {
+        _uiState.update {
+            it.copy(
+                hadSexualActivity = hadSex,
+                protectionUsed = if (hadSex) protection else ProtectionMethod.NONE,
                 feedbackMessage = null
             )
         }
     }
 
-    fun onProtectionMethodSelected(method: ProtectionMethod) {
-        _uiState.update {
-            it.copy(protectionUsed = method, feedbackMessage = null)
-        }
+    fun onTookContraceptivePillChanged(took: Boolean) {
+        _uiState.update { it.copy(tookContraceptivePill = took, feedbackMessage = null) }
+    }
+
+    fun onTookEmergencyPillChanged(took: Boolean) {
+        _uiState.update { it.copy(tookEmergencyPill = took, feedbackMessage = null) }
     }
 
     fun onNotesChanged(notes: String) {
-        _uiState.update {
-            it.copy(notes = notes, feedbackMessage = null)
-        }
+        _uiState.update { it.copy(notes = notes, feedbackMessage = null) }
     }
 
     fun saveDailyLog() {
@@ -167,13 +160,13 @@ class DailyLogViewModel @Inject constructor(
                 } else {
                     ProtectionMethod.NONE
                 },
+                tookContraceptivePill = currentState.tookContraceptivePill,
+                tookEmergencyPill = currentState.tookEmergencyPill,
                 notes = currentState.notes.trim().ifBlank { null }
             )
 
             dailyLogRepository.upsertDailyLog(log)
 
-            // Si se registra flujo menstrual activo (ligero, moderado o abundante) y han pasado
-            // al menos 15 días desde el inicio del último ciclo, se actualiza la línea temporal (RF-04, RF-08).
             if (currentState.flowLevel in ACTIVE_MENSTRUAL_FLOWS) {
                 syncCycleStartIfNewPeriod(currentState.selectedDate)
             }
@@ -182,7 +175,8 @@ class DailyLogViewModel @Inject constructor(
                 it.copy(
                     isSaving = false,
                     isExistingRecord = true,
-                    feedbackMessage = "Registro guardado correctamente para el ${currentState.selectedDate}."
+                    savedSuccessfully = true,
+                    feedbackMessage = "Registro guardado correctamente."
                 )
             }
         }
@@ -195,7 +189,7 @@ class DailyLogViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isExistingRecord = false,
-                    feedbackMessage = "Se eliminó el registro del $dateToDelete."
+                    feedbackMessage = "Registro eliminado."
                 )
             }
         }
@@ -208,7 +202,6 @@ class DailyLogViewModel @Inject constructor(
         if (latestCycle != null) {
             val daysSinceStart = ChronoUnit.DAYS.between(latestCycle.startDate, bleedingDate).toInt()
             if (daysSinceStart >= MIN_DAYS_FOR_NEW_CYCLE) {
-                // Cerrar el ciclo previo con su duración real y abrir el nuevo ciclo
                 cycleRepository.upsertCycle(
                     latestCycle.copy(
                         endDate = bleedingDate.minusDays(1),
@@ -223,7 +216,10 @@ class DailyLogViewModel @Inject constructor(
                 )
                 if (profile != null && bleedingDate.isAfter(profile.lastPeriodStartDate)) {
                     userProfileRepository.saveOrUpdateUserProfile(
-                        profile.copy(lastPeriodStartDate = bleedingDate)
+                        profile.copy(
+                            lastPeriodStartDate = bleedingDate,
+                            isCurrentlyMenstruating = bleedingDate == LocalDate.now()
+                        )
                     )
                 }
             }

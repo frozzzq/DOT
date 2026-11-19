@@ -35,7 +35,11 @@ enum class Symptom {
     ACNE,
     MOOD_CHANGES,
     LOWER_BACK_PAIN,
-    NAUSEA
+    NAUSEA,
+    ANXIETY_STRESS,
+    CRAVINGS,
+    INSOMNIA,
+    CERVICAL_MUCUS_CHANGES
 }
 
 enum class ProtectionMethod {
@@ -51,4 +55,19 @@ enum class EmergencyCompoundType {
     LEVONORGESTREL,
     ULIPRISTAL_ACETATE,
     UNKNOWN
+}
+
+enum class CyclePhase {
+    MENSTRUAL,
+    FOLLICULAR,
+    OVULATION_FERTILE,
+    LUTEAL
+}
+
+enum class CycleClassification {
+    NORMAL_REGULAR,
+    IRREGULAR,
+    ANOMALOUS,
+    ALTERED_BY_EMERGENCY,
+    IN_PROGRESS
 }

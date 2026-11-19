@@ -8,6 +8,8 @@ import java.time.LocalDate
 data class UserProfile(
     val id: Int = SINGLETON_PROFILE_ID,
     val lastPeriodStartDate: LocalDate,
+    val lastPeriodEndDate: LocalDate? = null,
+    val isCurrentlyMenstruating: Boolean = false,
     val averagePeriodDuration: Int,
     val averageCycleLength: Int,
     val regularity: CycleRegularity,

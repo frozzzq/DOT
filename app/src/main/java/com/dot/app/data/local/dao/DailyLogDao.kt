@@ -10,6 +10,9 @@ import java.time.LocalDate
 @Dao
 interface DailyLogDao {
 
+    @Query("SELECT * FROM daily_logs ORDER BY date DESC")
+    fun observeAllLogs(): Flow<List<DailyLogEntity>>
+
     @Query("SELECT * FROM daily_logs WHERE date BETWEEN :startDate AND :endDate ORDER BY date ASC")
     fun observeLogsBetween(startDate: LocalDate, endDate: LocalDate): Flow<List<DailyLogEntity>>
 
@@ -18,6 +21,9 @@ interface DailyLogDao {
 
     @Upsert
     suspend fun upsertDailyLog(log: DailyLogEntity)
+
+    @Upsert
+    suspend fun upsertDailyLogs(logs: List<DailyLogEntity>)
 
     @Query("DELETE FROM daily_logs WHERE date = :date")
     suspend fun deleteDailyLogByDate(date: LocalDate)

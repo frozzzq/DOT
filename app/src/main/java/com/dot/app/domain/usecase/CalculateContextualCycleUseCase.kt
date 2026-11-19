@@ -2,8 +2,10 @@ package com.dot.app.domain.usecase
 
 import com.dot.app.domain.model.ContraceptiveMethod
 import com.dot.app.domain.model.Cycle
+import com.dot.app.domain.model.CyclePhase
 import com.dot.app.domain.model.CyclePrediction
 import com.dot.app.domain.model.CycleRegularity
+import com.dot.app.domain.model.DailyLog
 import com.dot.app.domain.model.EmergencyCompoundType
 import com.dot.app.domain.model.EmergencyContraceptionLog
 import com.dot.app.domain.model.PredictionConfidenceContext
@@ -17,12 +19,8 @@ import kotlin.math.roundToInt
 /**
  * Motor de predicción y recálculo contextual del ciclo menstrual (RF-04).
  *
- * Calcula la ventana estimada del próximo sangrado tomando en cuenta:
- * 1. El historial de ciclos no alterados (para no sesgar el promedio habitual, RF-07).
- * 2. El grado de regularidad percibida o variabilidad histórica de la usuaria.
- * 3. La ingesta de anticoncepción hormonal de emergencia durante el ciclo activo (RF-03),
- *    ampliando la ventana esperada según la fase de administración y el compuesto activo
- *    (Levonorgestrel o Acetato de ulipristal) en lugar de marcar un retraso rígido.
+ * El ciclo menstrual inicia el Día 1 (primer día de sangrado) y concluye el día previo
+ * al inicio de la siguiente menstruación.
  */
 class CalculateContextualCycleUseCase @Inject constructor() {
 
@@ -30,12 +28,11 @@ class CalculateContextualCycleUseCase @Inject constructor() {
         userProfile: UserProfile,
         historicalCycles: List<Cycle> = emptyList(),
         recentEmergencyEvents: List<EmergencyContraceptionLog> = emptyList(),
+        dailyLogs: List<DailyLog> = emptyList(),
         evaluationDate: LocalDate = LocalDate.now()
     ): CyclePrediction {
-        val currentCycleStart = historicalCycles
-            .maxByOrNull { it.startDate }
-            ?.startDate
-            ?: userProfile.lastPeriodStartDate
+        val latestCycle = historicalCycles.maxByOrNull { it.startDate }
+        val currentCycleStart = latestCycle?.startDate ?: userProfile.lastPeriodStartDate
 
         // Excluir ciclos alterados por anticoncepción de emergencia al calcular el promedio habitual (RF-07)
         val validHistoricalLengths = historicalCycles
@@ -57,6 +54,18 @@ class CalculateContextualCycleUseCase @Inject constructor() {
             1,
             ChronoUnit.DAYS.between(currentCycleStart, evaluationDate).toInt() + 1
         )
+
+        // Determinar si hoy está en sangrado menstrual activo
+        val todayLog = dailyLogs.firstOrNull { it.date == evaluationDate }
+        val bleedingDuration = latestCycle?.bleedingDurationDays ?: userProfile.averagePeriodDuration
+        val isWithinInitialBleedingDays = currentDayOfCycle <= bleedingDuration &&
+            (userProfile.lastPeriodEndDate == null || !evaluationDate.isAfter(userProfile.lastPeriodEndDate))
+        val isCurrentlyMenstruating = when {
+            todayLog != null -> todayLog.hasMenstrualBleeding
+            userProfile.isCurrentlyMenstruating && currentCycleStart == userProfile.lastPeriodStartDate &&
+                currentDayOfCycle <= MAX_ACTIVE_BLEEDING_DAYS -> true
+            else -> isWithinInitialBleedingDays
+        }
 
         // Detectar si existe una toma de anticoncepción de emergencia dentro del ciclo actual
         val activeEmergencyEvent = recentEmergencyEvents
@@ -82,18 +91,70 @@ class CalculateContextualCycleUseCase @Inject constructor() {
             ChronoUnit.DAYS.between(estimatedWindowEnd, evaluationDate).toInt()
         )
 
+        // Estimación orientativa de ovulación y ventana fértil (solo cuando no hay supresión ovulatoria hormonal)
+        val suppressesOvulation = userProfile.contraceptiveMethod in OVULATION_SUPPRESSING_METHODS
+        val estimatedOvulationDayOffset = max(10, effectiveCycleLength - LUTEAL_PHASE_STANDARD_DAYS) - 1
+        val estimatedOvulationDate = if (!suppressesOvulation) {
+            currentCycleStart.plusDays(estimatedOvulationDayOffset.toLong())
+        } else {
+            null
+        }
+        val fertileStart = estimatedOvulationDate?.minusDays(5)
+        val fertileEnd = estimatedOvulationDate?.plusDays(1)
+
+        val currentPhase = resolveCurrentPhase(
+            isCurrentlyMenstruating = isCurrentlyMenstruating,
+            evaluationDate = evaluationDate,
+            fertileStart = fertileStart,
+            fertileEnd = fertileEnd,
+            estimatedOvulationDate = estimatedOvulationDate,
+            currentDayOfCycle = currentDayOfCycle,
+            effectiveCycleLength = effectiveCycleLength
+        )
+
         return CyclePrediction(
             referenceCycleStartDate = currentCycleStart,
             currentDayOfCycle = currentDayOfCycle,
+            expectedCycleLengthDays = effectiveCycleLength,
             baselineExpectedDate = baselineExpectedDate,
             estimatedWindowStart = estimatedWindowStart,
             estimatedWindowEnd = estimatedWindowEnd,
-            expectedBleedingDurationDays = userProfile.averagePeriodDuration,
+            expectedBleedingDurationDays = bleedingDuration,
+            currentPhase = currentPhase,
+            isCurrentlyMenstruating = isCurrentlyMenstruating,
+            estimatedOvulationDate = estimatedOvulationDate,
+            fertileWindowStart = fertileStart,
+            fertileWindowEnd = fertileEnd,
             confidenceContext = confidenceContext,
             activeEmergencyContraception = activeEmergencyEvent,
             daysPastBaselineDate = daysPastBaseline,
             daysPastExpandedWindow = daysPastExpandedWindow
         )
+    }
+
+    private fun resolveCurrentPhase(
+        isCurrentlyMenstruating: Boolean,
+        evaluationDate: LocalDate,
+        fertileStart: LocalDate?,
+        fertileEnd: LocalDate?,
+        estimatedOvulationDate: LocalDate?,
+        currentDayOfCycle: Int,
+        effectiveCycleLength: Int
+    ): CyclePhase {
+        if (isCurrentlyMenstruating) return CyclePhase.MENSTRUAL
+        if (fertileStart != null && fertileEnd != null &&
+            !evaluationDate.isBefore(fertileStart) && !evaluationDate.isAfter(fertileEnd)
+        ) {
+            return CyclePhase.OVULATION_FERTILE
+        }
+        val ovulationDay = max(10, effectiveCycleLength - LUTEAL_PHASE_STANDARD_DAYS)
+        return if (estimatedOvulationDate != null && evaluationDate.isBefore(estimatedOvulationDate)) {
+            CyclePhase.FOLLICULAR
+        } else if (currentDayOfCycle < ovulationDay) {
+            CyclePhase.FOLLICULAR
+        } else {
+            CyclePhase.LUTEAL
+        }
     }
 
     private fun resolveContextualWindowOffsets(
@@ -109,8 +170,6 @@ class CalculateContextualCycleUseCase @Inject constructor() {
             ).toInt() + 1
             val estimatedOvulationDay = max(10, effectiveCycleLength - LUTEAL_PHASE_STANDARD_DAYS)
 
-            // Si la toma ocurrió en fase folicular (antes de la ovulación estimada), puede
-            // adelantar el sangrado por deprivación o posponer la ovulación entre 7 y 10 días.
             val earlyMargin = if (cycleDayAtIntake <= estimatedOvulationDay) {
                 -EARLY_BLEEDING_MARGIN_EMERGENCY_DAYS
             } else {
@@ -157,6 +216,7 @@ class CalculateContextualCycleUseCase @Inject constructor() {
         private const val MIN_PHYSIOLOGICAL_CYCLE_DAYS = 21
         private const val MAX_PHYSIOLOGICAL_CYCLE_DAYS = 45
         private const val LUTEAL_PHASE_STANDARD_DAYS = 14
+        private const val MAX_ACTIVE_BLEEDING_DAYS = 12
 
         private const val HORMONAL_CONTROLLED_MARGIN_DAYS = 1
         private const val STANDARD_REGULAR_MARGIN_DAYS = 2
@@ -169,6 +229,13 @@ class CalculateContextualCycleUseCase @Inject constructor() {
 
         private val HORMONAL_SCHEDULED_METHODS = setOf(
             ContraceptiveMethod.COMBINED_ORAL_PILL,
+            ContraceptiveMethod.VAGINAL_RING_OR_PATCH
+        )
+
+        private val OVULATION_SUPPRESSING_METHODS = setOf(
+            ContraceptiveMethod.COMBINED_ORAL_PILL,
+            ContraceptiveMethod.SUBDERMAL_IMPLANT,
+            ContraceptiveMethod.INJECTION,
             ContraceptiveMethod.VAGINAL_RING_OR_PATCH
         )
     }

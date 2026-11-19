@@ -9,7 +9,7 @@ import com.dot.app.domain.model.Symptom
 import java.time.LocalDate
 
 /**
- * Entidad Room para el registro diario de flujo menstrual, síntomas y actividad sexual (RF-02).
+ * Entidad Room para el registro diario de flujo menstrual, síntomas, anticonceptivos y actividad sexual (RF-02).
  */
 @Entity(tableName = "daily_logs")
 data class DailyLogEntity(
@@ -28,6 +28,12 @@ data class DailyLogEntity(
 
     @ColumnInfo(name = "protection_used")
     val protectionUsed: ProtectionMethod = ProtectionMethod.NONE,
+
+    @ColumnInfo(name = "took_contraceptive_pill")
+    val tookContraceptivePill: Boolean = false,
+
+    @ColumnInfo(name = "took_emergency_pill")
+    val tookEmergencyPill: Boolean = false,
 
     @ColumnInfo(name = "notes")
     val notes: String? = null

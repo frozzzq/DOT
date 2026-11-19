@@ -5,7 +5,9 @@ import com.dot.app.domain.model.ContraceptiveMethod
 import com.dot.app.domain.model.CycleRegularity
 import com.dot.app.domain.model.EmergencyCompoundType
 import com.dot.app.domain.model.FlowLevel
+import com.dot.app.domain.model.ForumCategory
 import com.dot.app.domain.model.ProtectionMethod
+import com.dot.app.domain.model.ReminderType
 import com.dot.app.domain.model.Symptom
 import java.time.LocalDate
 import java.time.LocalTime
@@ -62,6 +64,20 @@ class RoomConverters {
     @TypeConverter
     fun toEmergencyCompoundType(value: String): EmergencyCompoundType =
         runCatching { EmergencyCompoundType.valueOf(value) }.getOrDefault(EmergencyCompoundType.UNKNOWN)
+
+    @TypeConverter
+    fun fromReminderType(type: ReminderType): String = type.name
+
+    @TypeConverter
+    fun toReminderType(value: String): ReminderType =
+        runCatching { ReminderType.valueOf(value) }.getOrDefault(ReminderType.PERIOD_LOG_REMINDER)
+
+    @TypeConverter
+    fun fromForumCategory(category: ForumCategory): String = category.name
+
+    @TypeConverter
+    fun toForumCategory(value: String): ForumCategory =
+        runCatching { ForumCategory.valueOf(value) }.getOrDefault(ForumCategory.CYCLE)
 
     @TypeConverter
     fun fromSymptomList(symptoms: List<Symptom>): String =

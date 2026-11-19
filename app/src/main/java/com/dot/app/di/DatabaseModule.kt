@@ -6,6 +6,9 @@ import com.dot.app.data.local.DotDatabase
 import com.dot.app.data.local.dao.CycleDao
 import com.dot.app.data.local.dao.DailyLogDao
 import com.dot.app.data.local.dao.EmergencyContraceptionDao
+import com.dot.app.data.local.dao.ForumDao
+import com.dot.app.data.local.dao.NotificationReminderDao
+import com.dot.app.data.local.dao.UserAccountDao
 import com.dot.app.data.local.dao.UserProfileDao
 import dagger.Module
 import dagger.Provides
@@ -33,6 +36,10 @@ object DatabaseModule {
     }
 
     @Provides
+    fun provideUserAccountDao(database: DotDatabase): UserAccountDao =
+        database.userAccountDao()
+
+    @Provides
     fun provideUserProfileDao(database: DotDatabase): UserProfileDao =
         database.userProfileDao()
 
@@ -47,4 +54,12 @@ object DatabaseModule {
     @Provides
     fun provideEmergencyContraceptionDao(database: DotDatabase): EmergencyContraceptionDao =
         database.emergencyContraceptionDao()
+
+    @Provides
+    fun provideNotificationReminderDao(database: DotDatabase): NotificationReminderDao =
+        database.notificationReminderDao()
+
+    @Provides
+    fun provideForumDao(database: DotDatabase): ForumDao =
+        database.forumDao()
 }

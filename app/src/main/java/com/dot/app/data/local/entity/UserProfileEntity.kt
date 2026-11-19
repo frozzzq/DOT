@@ -20,6 +20,12 @@ data class UserProfileEntity(
     @ColumnInfo(name = "last_period_start_date")
     val lastPeriodStartDate: LocalDate,
 
+    @ColumnInfo(name = "last_period_end_date")
+    val lastPeriodEndDate: LocalDate? = null,
+
+    @ColumnInfo(name = "is_currently_menstruating")
+    val isCurrentlyMenstruating: Boolean = false,
+
     @ColumnInfo(name = "average_period_duration")
     val averagePeriodDuration: Int,
 

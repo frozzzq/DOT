@@ -1,9 +1,13 @@
 package com.dot.app.presentation.home
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,50 +15,76 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.HealthAndSafety
+import androidx.compose.material.icons.outlined.Medication
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Spa
+import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dot.app.domain.model.ContraceptiveMethod
+import com.dot.app.domain.model.CyclePhase
 import com.dot.app.domain.model.CyclePrediction
 import com.dot.app.domain.model.DailyLog
 import com.dot.app.domain.model.EmpatheticMessage
-import com.dot.app.domain.model.FlowLevel
 import com.dot.app.domain.model.MessageCategory
-import com.dot.app.domain.model.PredictionConfidenceContext
+import com.dot.app.domain.model.ProtectionMethod
+import com.dot.app.presentation.daily_log.toDisplayName
+import com.dot.app.presentation.theme.DotBlueSoft
+import com.dot.app.presentation.theme.DotBlushCanvas
+import com.dot.app.presentation.theme.DotBlushPink
+import com.dot.app.presentation.theme.DotBlushSurface
+import com.dot.app.presentation.theme.DotDeepSlate
+import com.dot.app.presentation.theme.DotDustyBlue
+import com.dot.app.presentation.theme.DotInkBlack
+import com.dot.app.presentation.theme.DotMutedText
+import com.dot.app.presentation.theme.DotOutlineSoft
+import com.dot.app.presentation.theme.DotRoseStrong
+import com.dot.app.presentation.theme.DotSageDark
+import com.dot.app.presentation.theme.DotSageGreen
+import com.dot.app.presentation.theme.DotSageSoft
+import com.dot.app.presentation.theme.DotWhite
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeDashboardScreen(
+    onOpenCalendar: () -> Unit,
+    onOpenNotifications: () -> Unit,
     onNavigateToDailyLog: (LocalDate?) -> Unit,
     onNavigateToEmergencyContraception: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
@@ -62,182 +92,376 @@ fun HomeDashboardScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val shortDateFormatter = remember {
-        DateTimeFormatter.ofPattern("d 'de' MMM", Locale("es", "MX"))
+        DateTimeFormatter.ofPattern("d MMM", Locale("es", "MX"))
     }
-    val fullDateFormatter = remember {
-        DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("es", "MX"))
+    val headerDateFormatter = remember {
+        DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("es", "MX"))
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Dot",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = uiState.evaluationDate.format(fullDateFormatter)
-                                .replaceFirstChar { it.uppercase() },
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        }
-    ) { innerPadding ->
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
-            return@Scaffold
-        }
-
-        Column(
+    if (uiState.isLoading) {
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+                .background(DotBlushCanvas),
+            contentAlignment = Alignment.Center
         ) {
-            // 1. Estado actual del ciclo (RF-04)
-            uiState.cyclePrediction?.let { prediction ->
-                CycleStatusSummaryCard(
-                    prediction = prediction,
-                    shortDateFormatter = shortDateFormatter
+            CircularProgressIndicator(color = DotRoseStrong)
+        }
+        return
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        DotBlushPink.copy(alpha = 0.72f),
+                        DotBlushCanvas,
+                        DotBlushCanvas
+                    )
+                )
+            )
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
+    ) {
+        // Barra superior limpia: Saludo + Notificaciones y Calendario arriba a la derecha
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = if (uiState.userName.isNotBlank()) "Hola, ${uiState.userName}" else "Hoy",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = DotInkBlack
+                )
+                Text(
+                    text = uiState.evaluationDate.format(headerDateFormatter),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = DotDeepSlate
                 )
             }
 
-            // 2. Tarjeta principal con mensaje empático adaptado al contexto (RF-05, RNF-03)
-            uiState.empatheticMessage?.let { message ->
-                EmpatheticContextualCard(
-                    message = message,
-                    shortDateFormatter = shortDateFormatter
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Botón de módulo de notificaciones y recordatorios
+                Surface(
+                    shape = CircleShape,
+                    color = DotWhite,
+                    shadowElevation = 2.dp
+                ) {
+                    IconButton(onClick = onOpenNotifications) {
+                        Icon(
+                            imageVector = Icons.Outlined.Notifications,
+                            contentDescription = "Notificaciones y recordatorios",
+                            tint = DotDeepSlate
+                        )
+                    }
+                }
+
+                // Botón del calendario arriba a la derecha
+                Surface(
+                    shape = CircleShape,
+                    color = DotRoseStrong,
+                    shadowElevation = 3.dp
+                ) {
+                    IconButton(onClick = onOpenCalendar) {
+                        Icon(
+                            imageVector = Icons.Outlined.CalendarMonth,
+                            contentDescription = "Abrir calendario completo",
+                            tint = DotWhite
+                        )
+                    }
+                }
+            }
+        }
+
+        // 1. HERO CENTRAL ESTILO FLO: Día del ciclo EN GRANDE
+        uiState.cyclePrediction?.let { prediction ->
+            CycleHeroCircleCard(
+                prediction = prediction,
+                shortDateFormatter = shortDateFormatter,
+                onTogglePeriodToday = viewModel::togglePeriodToday
+            )
+        }
+
+        // 2. BOTÓN INTUITIVO PRINCIPAL PARA REGISTRAR SÍNTOMAS, SEXO, PASTILLAS Y POSTDAY
+        SymptomQuickCtaCard(
+            todayLog = uiState.todayLog,
+            onLogToday = { onNavigateToDailyLog(LocalDate.now()) },
+            onOpenEmergency = onNavigateToEmergencyContraception
+        )
+
+        // 3. Recordatorio rápido de pastilla anticonceptiva diaria (si aplica)
+        val usesDailyPill = uiState.userProfile?.contraceptiveMethod == ContraceptiveMethod.COMBINED_ORAL_PILL ||
+            uiState.userProfile?.contraceptiveMethod == ContraceptiveMethod.PROGESTIN_ONLY_PILL
+        if (usesDailyPill) {
+            DailyPillQuickCheckCard(
+                takenToday = uiState.todayLog?.tookContraceptivePill == true,
+                onToggleTaken = viewModel::toggleDailyPillTakenToday
+            )
+        }
+
+        // 4. Resumen compacto de lo registrado hoy (si hay datos)
+        uiState.todayLog?.let { log ->
+            val hasInfo = log.symptoms.isNotEmpty() || log.hadSexualActivity ||
+                log.tookContraceptivePill || log.tookEmergencyPill || log.hasMenstrualBleeding
+            if (hasInfo) {
+                TodaySummaryChipsCard(
+                    log = log,
+                    onEdit = { onNavigateToDailyLog(LocalDate.now()) }
+                )
+            }
+        }
+
+        // 5. Tarjeta de acompañamiento contextual y empático (RF-05, sin saturar)
+        uiState.empatheticMessage?.let { message ->
+            CompactEmpatheticCard(message = message)
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+    }
+}
+
+@Composable
+private fun CycleHeroCircleCard(
+    prediction: CyclePrediction,
+    shortDateFormatter: DateTimeFormatter,
+    onTogglePeriodToday: () -> Unit
+) {
+    val phaseBadgeText = when {
+        prediction.activeEmergencyContraception != null -> "Recalibrado por Postday"
+        prediction.currentPhase == CyclePhase.MENSTRUAL -> "Fase menstrual"
+        prediction.currentPhase == CyclePhase.FOLLICULAR -> "Fase folicular"
+        prediction.currentPhase == CyclePhase.OVULATION_FERTILE -> "Ventana fértil estimada"
+        else -> "Fase lútea"
+    }
+
+    val phasePillColor = when {
+        prediction.activeEmergencyContraception != null -> DotDustyBlue
+        prediction.currentPhase == CyclePhase.MENSTRUAL -> DotRoseStrong
+        prediction.currentPhase == CyclePhase.OVULATION_FERTILE -> DotSageGreen
+        else -> DotDeepSlate
+    }
+
+    val phasePillTextColor = when {
+        prediction.activeEmergencyContraception != null -> DotInkBlack
+        prediction.currentPhase == CyclePhase.OVULATION_FERTILE -> DotInkBlack
+        else -> DotWhite
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = DotWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = phasePillColor
+            ) {
+                Text(
+                    text = phaseBadgeText,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = phasePillTextColor,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                 )
             }
 
-            // 3. Accesos directos rápidos (RNF-03: máximo 3 interacciones)
+            // Círculo rosado central con el DÍA DEL CICLO en grande
+            Box(
+                modifier = Modifier
+                    .size(204.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                if (prediction.isCurrentlyMenstruating) DotRoseStrong else DotBlushPink,
+                                if (prediction.isCurrentlyMenstruating) DotRoseStrong.copy(alpha = 0.85f) else DotBlushSurface
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                val heroTextColor = if (prediction.isCurrentlyMenstruating) DotWhite else DotInkBlack
+                val heroSubColor = if (prediction.isCurrentlyMenstruating) {
+                    DotWhite.copy(alpha = 0.9f)
+                } else {
+                    DotDeepSlate
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = if (prediction.isCurrentlyMenstruating) "Periodo activo" else "Tu ciclo",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = heroSubColor
+                    )
+                    Text(
+                        text = "Día ${prediction.currentDayOfCycle}",
+                        fontSize = 44.sp,
+                        lineHeight = 48.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = heroTextColor,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "de ~${prediction.expectedCycleLengthDays} días",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = heroSubColor
+                    )
+                }
+            }
+
+            // Ventana estimada clara y concisa
             Text(
-                text = "Acciones de seguimiento",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                text = if (prediction.isCurrentlyMenstruating) {
+                    "Inicio de tu regla: ${prediction.referenceCycleStartDate.format(shortDateFormatter)}"
+                } else {
+                    "Próximo periodo estimado: ${prediction.estimatedWindowStart.format(shortDateFormatter)} – ${prediction.estimatedWindowEnd.format(shortDateFormatter)}"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = DotDeepSlate,
+                textAlign = TextAlign.Center
             )
 
-            QuickActionsSection(
-                todayLog = uiState.todayLog,
-                onNavigateToDailyLog = { onNavigateToDailyLog(LocalDate.now()) },
-                onNavigateToEmergencyContraception = onNavigateToEmergencyContraception
-            )
-
-            // 4. Registros recientes con opción de edición rápida (RF-08)
-            if (uiState.recentLogs.isNotEmpty()) {
-                RecentLogsCard(
-                    recentLogs = uiState.recentLogs.take(5),
-                    shortDateFormatter = shortDateFormatter,
-                    onSelectDateToEdit = { date -> onNavigateToDailyLog(date) }
-                )
+            // Botón limpio de 1 toque para iniciar o finalizar periodo
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = if (prediction.isCurrentlyMenstruating) DotBlushSurface else DotRoseStrong,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .clickable(onClick = onTogglePeriodToday)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.WaterDrop,
+                        contentDescription = null,
+                        tint = if (prediction.isCurrentlyMenstruating) DotRoseStrong else DotWhite,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = if (prediction.isCurrentlyMenstruating) {
+                            "Terminó mi periodo"
+                        } else {
+                            "Registrar que me bajó"
+                        },
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (prediction.isCurrentlyMenstruating) DotInkBlack else DotWhite
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
-private fun CycleStatusSummaryCard(
-    prediction: CyclePrediction,
-    shortDateFormatter: DateTimeFormatter
+private fun SymptomQuickCtaCard(
+    todayLog: DailyLog?,
+    onLogToday: () -> Unit,
+    onOpenEmergency: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        colors = CardDefaults.cardColors(containerColor = DotWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(22.dp),
+                .padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
-                    shape = RoundedCornerShape(50)
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = prediction.confidenceContext.toFriendlyBadge(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        text = "¿Cómo te sientes hoy?",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = DotInkBlack
                     )
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.FavoriteBorder,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    Text(
+                        text = "Registra cólicos, dolor de cabeza, sexo, pastillas o flujo.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DotMutedText
+                    )
                 }
             }
 
-            Text(
-                text = "Día ${prediction.currentDayOfCycle} del ciclo",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-
-            Text(
-                text = "Inicio del ciclo actual: ${prediction.referenceCycleStartDate.format(shortDateFormatter)}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
-            )
-
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Button(
+                onClick = onLogToday,
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DotRoseStrong,
+                    contentColor = DotWhite
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
             ) {
-                Column {
-                    Text(
-                        text = "Ventana estimada del próximo periodo",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                Icon(
+                    imageVector = Icons.Outlined.Add,
+                    contentDescription = null,
+                    tint = DotWhite,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (todayLog != null) "Editar síntomas de hoy" else "Registrar síntomas y día",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = DotWhite
+                )
+            }
+
+            // Acceso discreto y directo a Postday (RF-03)
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = DotBlueSoft,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable(onClick = onOpenEmergency)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.HealthAndSafety,
+                        contentDescription = null,
+                        tint = DotDeepSlate,
+                        modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "${prediction.estimatedWindowStart.format(shortDateFormatter)} — ${prediction.estimatedWindowEnd.format(shortDateFormatter)}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        text = "¿Tomaste pastilla del día siguiente (Postday)? Regístrala aquí",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = DotDeepSlate,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -246,305 +470,178 @@ private fun CycleStatusSummaryCard(
 }
 
 @Composable
-private fun EmpatheticContextualCard(
-    message: EmpatheticMessage,
-    shortDateFormatter: DateTimeFormatter
+private fun DailyPillQuickCheckCard(
+    takenToday: Boolean,
+    onToggleTaken: () -> Unit
 ) {
-    val containerColor = when (message.category) {
-        MessageCategory.CYCLE_IN_PROGRESS_NORMAL,
-        MessageCategory.WITHIN_EXPECTED_WINDOW -> MaterialTheme.colorScheme.secondaryContainer
-        MessageCategory.EXPLAINABLE_VARIATION_EMERGENCY_PILL,
-        MessageCategory.EXPLAINABLE_VARIATION_IRREGULARITY -> MaterialTheme.colorScheme.tertiaryContainer
-        MessageCategory.MEDICAL_CHECKUP_SUGGESTION -> MaterialTheme.colorScheme.errorContainer
-    }
-
-    val contentColor = when (message.category) {
-        MessageCategory.CYCLE_IN_PROGRESS_NORMAL,
-        MessageCategory.WITHIN_EXPECTED_WINDOW -> MaterialTheme.colorScheme.onSecondaryContainer
-        MessageCategory.EXPLAINABLE_VARIATION_EMERGENCY_PILL,
-        MessageCategory.EXPLAINABLE_VARIATION_IRREGULARITY -> MaterialTheme.colorScheme.onTertiaryContainer
-        MessageCategory.MEDICAL_CHECKUP_SUGGESTION -> MaterialTheme.colorScheme.onErrorContainer
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
+    Surface(
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor)
+        color = if (takenToday) DotSageSoft else DotWhite,
+        border = BorderStroke(1.dp, if (takenToday) DotSageGreen else DotOutlineSoft),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onToggleTaken)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = if (takenToday) Icons.Outlined.CheckCircle else Icons.Outlined.Medication,
+                contentDescription = null,
+                tint = if (takenToday) DotSageDark else DotRoseStrong,
+                modifier = Modifier.size(24.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (takenToday) "Pastilla anticonceptiva tomada" else "Pastilla anticonceptiva de hoy",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = DotInkBlack
+                )
+                Text(
+                    text = if (takenToday) "Excelente, registrada en tu día de hoy." else "Toca aquí para marcar tu toma diaria.",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = DotMutedText
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TodaySummaryChipsCard(
+    log: DailyLog,
+    onEdit: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onEdit),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = DotWhite)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Registrado hoy",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = DotInkBlack
+                )
+                Text(
+                    text = "Editar",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = DotRoseStrong
+                )
+            }
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (log.hasMenstrualBleeding) {
+                    SummaryTag(text = log.flowLevel.toDisplayName(), bg = DotBlushPink, fg = DotInkBlack)
+                }
+                if (log.hadSexualActivity) {
+                    val sexLabel = when (log.protectionUsed) {
+                        ProtectionMethod.BARRIER_CONDOM -> "Sexo con condón"
+                        ProtectionMethod.NONE -> "Sexo sin condón"
+                        else -> "Actividad sexual"
+                    }
+                    SummaryTag(text = sexLabel, bg = DotBlueSoft, fg = DotDeepSlate)
+                }
+                if (log.tookContraceptivePill) {
+                    SummaryTag(text = "Pastilla anticonceptiva", bg = DotSageSoft, fg = DotSageDark)
+                }
+                if (log.tookEmergencyPill) {
+                    SummaryTag(text = "Postday", bg = DotDustyBlue, fg = DotInkBlack)
+                }
+                log.symptoms.forEach { symptom ->
+                    SummaryTag(text = symptom.toDisplayName(), bg = DotBlushSurface, fg = DotInkBlack)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryTag(text: String, bg: Color, fg: Color) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = bg
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = fg,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+        )
+    }
+}
+
+@Composable
+private fun CompactEmpatheticCard(message: EmpatheticMessage) {
+    val bgColor = when (message.category) {
+        MessageCategory.CYCLE_IN_PROGRESS_NORMAL,
+        MessageCategory.WITHIN_EXPECTED_WINDOW -> DotSageSoft
+        MessageCategory.EXPLAINABLE_VARIATION_EMERGENCY_PILL,
+        MessageCategory.EXPLAINABLE_VARIATION_IRREGULARITY -> DotBlueSoft
+        MessageCategory.MEDICAL_CHECKUP_SUGGESTION -> DotBlushPink.copy(alpha = 0.65f)
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = bgColor)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Info,
+                    imageVector = Icons.Outlined.Spa,
                     contentDescription = null,
-                    tint = contentColor
+                    tint = DotDeepSlate,
+                    modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = "Acompañamiento contextual",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = contentColor.copy(alpha = 0.85f)
+                    text = message.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = DotInkBlack
                 )
             }
-
-            Text(
-                text = message.title,
-                style = MaterialTheme.typography.titleLarge,
-                color = contentColor
-            )
-
             Text(
                 text = message.body,
-                style = MaterialTheme.typography.bodyLarge,
-                color = contentColor
+                style = MaterialTheme.typography.bodyMedium,
+                color = DotDeepSlate
             )
-
-            Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = message.reassuranceNote,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    message.actionableGuidance?.let { guidance ->
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = guidance,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    message.suggestedPregnancyTestDate?.let { testDate ->
-                        Text(
-                            text = "Fecha orientativa para prueba confiable: a partir del ${testDate.format(shortDateFormatter)}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+            message.actionableGuidance?.let { guidance ->
+                Text(
+                    text = guidance,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = DotInkBlack,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
-}
-
-@Composable
-private fun QuickActionsSection(
-    todayLog: DailyLog?,
-    onNavigateToDailyLog: () -> Unit,
-    onNavigateToEmergencyContraception: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // Acceso directo a Registro Diario (RF-02, RF-08)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.DateRange,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Registro diario y calendario",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = if (todayLog != null) {
-                                "Hoy registraste: flujo ${todayLog.flowLevel.toShortLabel().lowercase()}, ${todayLog.symptoms.size} síntoma(s)."
-                            } else {
-                                "Registra flujo menstrual, síntomas físicos o actividad sexual de hoy o días pasados."
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Button(
-                    onClick = onNavigateToDailyLog,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = if (todayLog != null) "Ver o editar registro diario" else "Registrar el día de hoy"
-                    )
-                }
-            }
-        }
-
-        // Acceso directo a Anticoncepción de Emergencia (RF-03, RF-06)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.FavoriteBorder,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        }
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Anticoncepción de emergencia",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = "Si tomaste una pastilla del día siguiente, regístrala aquí para recalibrar tu ciclo sin falsas alarmas.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                FilledTonalButton(
-                    onClick = onNavigateToEmergencyContraception,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Registrar pastilla de emergencia")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecentLogsCard(
-    recentLogs: List<DailyLog>,
-    shortDateFormatter: DateTimeFormatter,
-    onSelectDateToEdit: (LocalDate) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "Registros recientes (toca para editar)",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            recentLogs.forEach { log ->
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelectDateToEdit(log.date) }
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = log.date.format(shortDateFormatter),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = "Flujo: ${log.flowLevel.toShortLabel()} • Síntomas: ${log.symptoms.size}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Text(
-                            text = "Editar",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun PredictionConfidenceContext.toFriendlyBadge(): String = when (this) {
-    PredictionConfidenceContext.STANDARD_REGULAR -> "Ciclo regular • Ventana flexible"
-    PredictionConfidenceContext.EXPANDED_IRREGULAR -> "Rango amplio adaptado a tu ciclo"
-    PredictionConfidenceContext.RECALCULATED_EMERGENCY_CONTRACEPTION -> "Ventana recalibrada por emergencia"
-    PredictionConfidenceContext.HORMONAL_CONTRACEPTION_CONTROLLED -> "Seguimiento con método hormonal"
-}
-
-private fun FlowLevel.toShortLabel(): String = when (this) {
-    FlowLevel.NONE -> "Sin flujo"
-    FlowLevel.SPOTTING -> "Manchado"
-    FlowLevel.LIGHT -> "Ligero"
-    FlowLevel.MODERATE -> "Moderado"
-    FlowLevel.HEAVY -> "Abundante"
 }

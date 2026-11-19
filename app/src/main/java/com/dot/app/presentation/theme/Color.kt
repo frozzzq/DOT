@@ -3,68 +3,38 @@ package com.dot.app.presentation.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * Paleta de colores suave, cálida y empática para Dot (RNF-03).
- * Evita tonos rojos intensos o alarmistas, priorizando terracota suave,
- * salvia calmante, lavanda cálida y fondos crema relajantes.
+ * Paleta oficial de Dot — Suave, rosada, luminosa y de alto contraste.
+ *
+ * Colores base solicitados:
+ * - #F7CED2 (Rosa pastel / Blush principal)
+ * - #B77076 (Rosa fuerte / Menstruación y acentos principales)
+ * - #ABB9C6 (Azul pizarra suave / Información y variabilidad)
+ * - #B0BB91 (Verde salvia / Saludable, regular, ventana fértil)
+ * - #32434D (Gris azulado profundo / Contrastes y encabezados)
+ *
+ * Bases blancas (#FFFFFF) y tipografía en negro carbón (#1A2126) / blanco (#FFFFFF)
+ * para garantizar legibilidad impecable en toda la interfaz.
  */
 
-// Tonos principales (Terracota / Coral suave y cálido)
-val SoftTerracottaPrimary = Color(0xFFB86B5A)
-val OnSoftTerracottaPrimary = Color(0xFFFFFFFF)
-val SoftPeachPrimaryContainer = Color(0xFFF9E2DC)
-val OnSoftPeachPrimaryContainer = Color(0xFF3E1C14)
+// Colores exactos de la paleta Dot
+val DotBlushPink = Color(0xFFF7CED2)        // #F7CED2
+val DotRoseStrong = Color(0xFFB77076)       // #B77076
+val DotDustyBlue = Color(0xFFABB9C6)        // #ABB9C6
+val DotSageGreen = Color(0xFFB0BB91)        // #B0BB91
+val DotDeepSlate = Color(0xFF32434D)        // #32434D
 
-// Tonos secundarios (Verde Salvia / Eucalipto calmante)
-val CalmSageSecondary = Color(0xFF5D7A6E)
-val OnCalmSageSecondary = Color(0xFFFFFFFF)
-val SoftSageSecondaryContainer = Color(0xFFDCEAE3)
-val OnSoftSageSecondaryContainer = Color(0xFF192E26)
+// Variantes suaves derivadas para fondos limpios y tarjetas con aire visual
+val DotBlushCanvas = Color(0xFFFDF3F4)      // Fondo rosita muy suave y limpio
+val DotBlushSurface = Color(0xFFFAE5E8)     // Superficie rosada tenue
+val DotRoseDark = Color(0xFF8F4F55)         // Rosa oscuro para mayor contraste sobre blanco
+val DotSageSoft = Color(0xFFE7ECDC)         // Verde salvia tenue para tarjetas saludables
+val DotSageDark = Color(0xFF475430)         // Texto contrastado sobre salvia
+val DotBlueSoft = Color(0xFFE6ECF2)         // Azul pizarra tenue para tarjetas informativas
+val DotBlueDark = Color(0xFF2B3A45)         // Texto contrastado sobre azul pizarra
 
-// Tonos terciarios (Lavanda / Malva sereno para contexto e información)
-val WarmLavenderTertiary = Color(0xFF7B6888)
-val OnWarmLavenderTertiary = Color(0xFFFFFFFF)
-val SoftLavenderTertiaryContainer = Color(0xFFEDE4F3)
-val OnSoftLavenderTertiaryContainer = Color(0xFF2C1E36)
-
-// Fondos y superficies (Crema / Marfil cálido)
-val WarmCreamBackground = Color(0xFFFCF9F6)
-val OnWarmCreamBackground = Color(0xFF2B2523)
-val WarmIvorySurface = Color(0xFFF7F2EE)
-val OnWarmIvorySurface = Color(0xFF2B2523)
-val WarmSandSurfaceVariant = Color(0xFFEDE4DD)
-val OnWarmSandSurfaceVariant = Color(0xFF534843)
-val SoftOutline = Color(0xFF867872)
-val SoftOutlineVariant = Color(0xFFD6C8C1)
-
-// Avisos no alarmistas (Ámbar suave en lugar de rojo peligro - RNF-03)
-val CalmAmberNotice = Color(0xFF9E5A3C)
-val OnCalmAmberNotice = Color(0xFFFFFFFF)
-val CalmAmberNoticeContainer = Color(0xFFFCE4D8)
-val OnCalmAmberNoticeContainer = Color(0xFF3A1A0B)
-
-// Modo Oscuro Cálido
-val DarkTerracottaPrimary = Color(0xFFEBB5A7)
-val OnDarkTerracottaPrimary = Color(0xFF4C251C)
-val DarkTerracottaPrimaryContainer = Color(0xFF683B30)
-val OnDarkTerracottaPrimaryContainer = Color(0xFFF9E2DC)
-
-val DarkSageSecondary = Color(0xFFA5C4B6)
-val OnDarkSageSecondary = Color(0xFF14352B)
-val DarkSageSecondaryContainer = Color(0xFF2C4C41)
-val OnDarkSageSecondaryContainer = Color(0xFFDCEAE3)
-
-val DarkLavenderTertiary = Color(0xFFD3C0E0)
-val OnDarkLavenderTertiary = Color(0xFF382943)
-val DarkLavenderTertiaryContainer = Color(0xFF503F5B)
-val OnDarkLavenderTertiaryContainer = Color(0xFFEDE4F3)
-
-val DarkWarmBackground = Color(0xFF1C1917)
-val OnDarkWarmBackground = Color(0xFFEAE1DC)
-val DarkWarmSurface = Color(0xFF25211E)
-val OnDarkWarmSurface = Color(0xFFEAE1DC)
-val DarkWarmSurfaceVariant = Color(0xFF4A413D)
-val OnDarkWarmSurfaceVariant = Color(0xFFCFC3BC)
-val DarkCalmAmberNotice = Color(0xFFF2B69C)
-val OnDarkCalmAmberNotice = Color(0xFF522714)
-val DarkCalmAmberNoticeContainer = Color(0xFF703B23)
-val OnDarkCalmAmberNoticeContainer = Color(0xFFFCE4D8)
+// Neutros puros para máxima legibilidad
+val DotWhite = Color(0xFFFFFFFF)
+val DotInkBlack = Color(0xFF1A2126)
+val DotMutedText = Color(0xFF56636C)
+val DotOutlineSoft = Color(0xFFE6C8CC)
+val DotDividerSoft = Color(0xFFF0D9DC)
