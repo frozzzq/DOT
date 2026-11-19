@@ -18,12 +18,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ShowChart
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.MedicalServices
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Timeline
+import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.dot.app.presentation.components.CycleLengthMiniChartCard
+import com.dot.app.presentation.components.DotSoftHeaderSurface
+import com.dot.app.presentation.components.DotSoftIconBadge
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -115,41 +122,45 @@ fun CyclesScreen(
             .fillMaxSize()
             .background(DotBlushCanvas)
     ) {
-        // Encabezado
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(DotBlushPink.copy(alpha = 0.45f))
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        // Encabezado suave con fondo orgánico pastel
+        DotSoftHeaderSurface(
+            accentColor = DotBlushPink,
+            secondaryAccent = DotSageSoft
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Mis ciclos",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = DotInkBlack
-                )
-                Text(
-                    text = "Historial, regularidad y orientación clínica.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = DotDeepSlate
-                )
-            }
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = DotRoseStrong,
+            Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .clickable { viewModel.onShowAddCycleDialog(true) }
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        text = "Mis ciclos",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = DotInkBlack
+                    )
+                    Text(
+                        text = "Historial visual, regularidad y orientación",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DotDeepSlate
+                    )
+                }
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = DotRoseStrong,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .clickable { viewModel.onShowAddCycleDialog(true) }
                 ) {
-                    Icon(Icons.Outlined.Add, contentDescription = null, tint = DotWhite, modifier = Modifier.size(18.dp))
-                    Text("Agregar", style = MaterialTheme.typography.labelLarge, color = DotWhite)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(Icons.Outlined.Add, contentDescription = null, tint = DotWhite, modifier = Modifier.size(18.dp))
+                        Text("Agregar", style = MaterialTheme.typography.labelLarge, color = DotWhite)
+                    }
                 }
             }
         }
@@ -160,12 +171,19 @@ fun CyclesScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                // 1. Métricas resumen
+                // 1. Métricas resumen visuales con iconos
                 item {
                     CycleMetricsRow(analysis = analysis)
                 }
 
-                // 2. Tarjeta de evaluación clínica y recomendación de especialista
+                // 2. Gráfica visual de ritmo de ciclos vs rango normal (24–38 d)
+                if (analysis.evaluatedCycles.isNotEmpty()) {
+                    item {
+                        CycleLengthMiniChartCard(cycles = analysis.evaluatedCycles)
+                    }
+                }
+
+                // 3. Tarjeta de evaluación clínica y recomendación de especialista
                 item {
                     SpecialistEvaluationCard(analysis = analysis)
                 }
@@ -218,18 +236,24 @@ private fun CycleMetricsRow(analysis: CycleHealthAnalysis) {
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         MetricBox(
+            icon = Icons.Outlined.Autorenew,
+            iconBg = DotBlushPink.copy(alpha = 0.7f),
             value = "${analysis.averageCycleLengthDays} d",
             label = "Ciclo prom.",
             accentColor = DotRoseStrong,
             modifier = Modifier.weight(1f)
         )
         MetricBox(
+            icon = Icons.Outlined.WaterDrop,
+            iconBg = DotBlueSoft,
             value = "${analysis.averageBleedingDays} d",
             label = "Sangrado",
             accentColor = DotDeepSlate,
             modifier = Modifier.weight(1f)
         )
         MetricBox(
+            icon = Icons.AutoMirrored.Outlined.ShowChart,
+            iconBg = DotSageSoft,
             value = "±${analysis.cycleVariationDays} d",
             label = "Variación",
             accentColor = DotSageDark,
@@ -240,6 +264,8 @@ private fun CycleMetricsRow(analysis: CycleHealthAnalysis) {
 
 @Composable
 private fun MetricBox(
+    icon: ImageVector,
+    iconBg: Color,
     value: String,
     label: String,
     accentColor: Color,
@@ -247,20 +273,27 @@ private fun MetricBox(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = DotWhite),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 10.dp),
+                .padding(vertical = 14.dp, horizontal = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            DotSoftIconBadge(
+                icon = icon,
+                backgroundColor = iconBg,
+                iconTint = accentColor,
+                size = 34.dp,
+                iconSize = 17.dp
+            )
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleLarge,
                 color = accentColor,
                 fontWeight = FontWeight.Bold
             )

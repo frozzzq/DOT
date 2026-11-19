@@ -27,9 +27,13 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.HealthAndSafety
 import androidx.compose.material.icons.outlined.Medication
+import androidx.compose.material.icons.outlined.Mood
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.dot.app.presentation.components.CycleProgressRingOverlay
+import com.dot.app.presentation.components.DotSoftIconBadge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -280,51 +284,73 @@ private fun CycleHeroCircleCard(
                 )
             }
 
-            // Círculo rosado central con el DÍA DEL CICLO en grande
+            // Círculo rosado central con anillo visual de fases y DÍA DEL CICLO en grande
             Box(
-                modifier = Modifier
-                    .size(204.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                if (prediction.isCurrentlyMenstruating) DotRoseStrong else DotBlushPink,
-                                if (prediction.isCurrentlyMenstruating) DotRoseStrong.copy(alpha = 0.85f) else DotBlushSurface
-                            )
-                        )
-                    ),
+                modifier = Modifier.size(236.dp),
                 contentAlignment = Alignment.Center
             ) {
-                val heroTextColor = if (prediction.isCurrentlyMenstruating) DotWhite else DotInkBlack
-                val heroSubColor = if (prediction.isCurrentlyMenstruating) {
-                    DotWhite.copy(alpha = 0.9f)
-                } else {
-                    DotDeepSlate
-                }
+                CycleProgressRingOverlay(
+                    currentDay = prediction.currentDayOfCycle,
+                    expectedCycleLength = prediction.expectedCycleLengthDays,
+                    isCurrentlyMenstruating = prediction.isCurrentlyMenstruating,
+                    modifier = Modifier.fillMaxSize()
+                )
 
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                Box(
+                    modifier = Modifier
+                        .size(196.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    if (prediction.isCurrentlyMenstruating) DotRoseStrong else DotBlushPink,
+                                    if (prediction.isCurrentlyMenstruating) DotRoseStrong.copy(alpha = 0.88f) else DotBlushSurface
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = if (prediction.isCurrentlyMenstruating) "Periodo activo" else "Tu ciclo",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = heroSubColor
-                    )
-                    Text(
-                        text = "Día ${prediction.currentDayOfCycle}",
-                        fontSize = 44.sp,
-                        lineHeight = 48.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = heroTextColor,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "de ~${prediction.expectedCycleLengthDays} días",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = heroSubColor
-                    )
+                    val heroTextColor = if (prediction.isCurrentlyMenstruating) DotWhite else DotInkBlack
+                    val heroSubColor = if (prediction.isCurrentlyMenstruating) {
+                        DotWhite.copy(alpha = 0.9f)
+                    } else {
+                        DotDeepSlate
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = if (prediction.isCurrentlyMenstruating) "Periodo activo" else "Tu ciclo",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = heroSubColor
+                        )
+                        Text(
+                            text = "Día ${prediction.currentDayOfCycle}",
+                            fontSize = 42.sp,
+                            lineHeight = 46.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = heroTextColor,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "de ~${prediction.expectedCycleLengthDays} días",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = heroSubColor
+                        )
+                    }
                 }
+            }
+
+            // Mini leyenda visual del anillo (menstruación + ventana fértil)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                MiniRingLegend(color = DotRoseStrong, label = "Periodo")
+                MiniRingLegend(color = DotSageGreen, label = "Ventana fértil")
+                MiniRingLegend(color = DotDeepSlate, label = "Hoy")
             }
 
             // Ventana estimada clara y concisa
@@ -391,23 +417,52 @@ private fun SymptomQuickCtaCard(
                 .padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Text(
+                text = "¿Cómo te sientes hoy?",
+                style = MaterialTheme.typography.titleMedium,
+                color = DotInkBlack
+            )
+
+            // Iconos visuales rápidos (reemplazan subtítulo largo por acceso visual intuitivo)
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "¿Cómo te sientes hoy?",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = DotInkBlack
-                    )
-                    Text(
-                        text = "Registra cólicos, dolor de cabeza, sexo, pastillas o flujo.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DotMutedText
-                    )
-                }
+                QuickVisualShortcut(
+                    icon = Icons.Outlined.WaterDrop,
+                    label = "Flujo",
+                    bg = DotBlushPink.copy(alpha = 0.7f),
+                    tint = DotRoseStrong,
+                    onClick = onLogToday
+                )
+                QuickVisualShortcut(
+                    icon = Icons.Outlined.Spa,
+                    label = "Cólicos",
+                    bg = DotBlushSurface,
+                    tint = DotRoseStrong,
+                    onClick = onLogToday
+                )
+                QuickVisualShortcut(
+                    icon = Icons.Outlined.Mood,
+                    label = "Ánimo",
+                    bg = DotSageSoft,
+                    tint = DotSageDark,
+                    onClick = onLogToday
+                )
+                QuickVisualShortcut(
+                    icon = Icons.Outlined.FavoriteBorder,
+                    label = "Sexo",
+                    bg = DotBlueSoft,
+                    tint = DotDeepSlate,
+                    onClick = onLogToday
+                )
+                QuickVisualShortcut(
+                    icon = Icons.Outlined.Medication,
+                    label = "Pastilla",
+                    bg = DotSageSoft,
+                    tint = DotSageDark,
+                    onClick = onLogToday
+                )
             }
 
             Button(
@@ -593,54 +648,110 @@ private fun SummaryTag(text: String, bg: Color, fg: Color) {
 }
 
 @Composable
+private fun MiniRingLegend(
+    color: Color,
+    label: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = DotMutedText
+        )
+    }
+}
+
+@Composable
+private fun QuickVisualShortcut(
+    icon: ImageVector,
+    label: String,
+    bg: Color,
+    tint: Color,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(5.dp),
+        modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 4.dp)
+    ) {
+        DotSoftIconBadge(
+            icon = icon,
+            backgroundColor = bg,
+            iconTint = tint,
+            size = 44.dp,
+            iconSize = 21.dp
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = DotDeepSlate
+        )
+    }
+}
+
+@Composable
 private fun CompactEmpatheticCard(message: EmpatheticMessage) {
-    val bgColor = when (message.category) {
+    val (bgColor, iconBg, iconTint) = when (message.category) {
         MessageCategory.CYCLE_IN_PROGRESS_NORMAL,
-        MessageCategory.WITHIN_EXPECTED_WINDOW -> DotSageSoft
+        MessageCategory.WITHIN_EXPECTED_WINDOW -> Triple(DotSageSoft, DotWhite.copy(alpha = 0.85f), DotSageDark)
         MessageCategory.EXPLAINABLE_VARIATION_EMERGENCY_PILL,
-        MessageCategory.EXPLAINABLE_VARIATION_IRREGULARITY -> DotBlueSoft
-        MessageCategory.MEDICAL_CHECKUP_SUGGESTION -> DotBlushPink.copy(alpha = 0.65f)
+        MessageCategory.EXPLAINABLE_VARIATION_IRREGULARITY -> Triple(DotBlueSoft, DotWhite.copy(alpha = 0.85f), DotDeepSlate)
+        MessageCategory.MEDICAL_CHECKUP_SUGGESTION -> Triple(DotBlushPink.copy(alpha = 0.65f), DotWhite.copy(alpha = 0.85f), DotRoseStrong)
     }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = bgColor)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            DotSoftIconBadge(
+                icon = Icons.Outlined.Spa,
+                backgroundColor = iconBg,
+                iconTint = iconTint,
+                size = 38.dp,
+                iconSize = 19.dp
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Spa,
-                    contentDescription = null,
-                    tint = DotDeepSlate,
-                    modifier = Modifier.size(18.dp)
-                )
                 Text(
                     text = message.title,
                     style = MaterialTheme.typography.titleMedium,
                     color = DotInkBlack
                 )
-            }
-            Text(
-                text = message.body,
-                style = MaterialTheme.typography.bodyMedium,
-                color = DotDeepSlate
-            )
-            message.actionableGuidance?.let { guidance ->
                 Text(
-                    text = guidance,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = DotInkBlack,
-                    fontWeight = FontWeight.SemiBold
+                    text = message.body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DotDeepSlate
                 )
+                message.actionableGuidance?.let { guidance ->
+                    Text(
+                        text = guidance,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = DotInkBlack,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }

@@ -18,6 +18,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.outlined.HealthAndSafety
+import com.dot.app.presentation.components.DotSoftIconBadge
+import com.dot.app.presentation.theme.DotBlueDark
+import com.dot.app.presentation.theme.DotBlueSoft
+import com.dot.app.presentation.theme.DotBlushCanvas
+import com.dot.app.presentation.theme.DotWhite
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -114,6 +120,7 @@ fun EmergencyContraceptionScreen(
     }
 
     Scaffold(
+        containerColor = DotBlushCanvas,
         topBar = {
             TopAppBar(
                 title = {
@@ -131,7 +138,7 @@ fun EmergencyContraceptionScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = DotWhite
                 )
             )
         }
@@ -154,28 +161,41 @@ fun EmergencyContraceptionScreen(
                 )
             }
 
-            // Encabezado empático
+            // Encabezado empático y visual
             Surface(
-                color = MaterialTheme.colorScheme.tertiaryContainer,
-                shape = RoundedCornerShape(16.dp),
+                color = DotBlueSoft,
+                shape = RoundedCornerShape(22.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = if (uiState.editingEventId != 0L) {
-                            "Editando registro de pastilla de emergencia"
-                        } else {
-                            "Registra tu toma sin juicios ni alarmas"
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    DotSoftIconBadge(
+                        icon = Icons.Outlined.HealthAndSafety,
+                        backgroundColor = DotWhite.copy(alpha = 0.85f),
+                        iconTint = DotBlueDark,
+                        size = 38.dp,
+                        iconSize = 20.dp
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "La anticoncepción de emergencia actúa posponiendo la ovulación. Al registrarla, Dot ajustará automáticamente tu ventana esperada para no mostrarte alertas de retraso irreales.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (uiState.editingEventId != 0L) {
+                                "Editando registro de Postday"
+                            } else {
+                                "Registra tu toma sin juicios ni alarmas"
+                            },
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Dot ajustará tu ventana esperada automáticamente para evitar alertas de retraso irreales.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
                 }
             }
 
@@ -471,7 +491,7 @@ private fun PostSaveContextualImpactCard(
                     tint = MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 Text(
-                    text = "Ciclo recalibrado • Qué esperar en tu periodo (RF-06)",
+                    text = "Ciclo recalibrado • Qué esperar",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
@@ -552,7 +572,7 @@ private fun RecordedEmergencyEventsSection(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "Tomas registradas (RF-08)",
+                text = "Tomas registradas",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )

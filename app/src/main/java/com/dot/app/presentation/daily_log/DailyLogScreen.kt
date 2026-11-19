@@ -20,7 +20,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.HealthAndSafety
+import androidx.compose.material.icons.outlined.Medication
+import androidx.compose.material.icons.outlined.Spa
+import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.dot.app.presentation.components.DotSoftIconBadge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -200,7 +208,12 @@ fun DailyLogScreen(
             }
 
             // 1. Flujo menstrual
-            LogSectionCard(title = "Flujo menstrual") {
+            LogSectionCard(
+                title = "Flujo menstrual",
+                icon = Icons.Outlined.WaterDrop,
+                iconBg = DotBlushPink.copy(alpha = 0.72f),
+                iconTint = DotRoseStrong
+            ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -222,7 +235,12 @@ fun DailyLogScreen(
             }
 
             // 2. Actividad sexual (directo: Con condón / Sin condón / Otros)
-            LogSectionCard(title = "Actividad sexual") {
+            LogSectionCard(
+                title = "Actividad sexual",
+                icon = Icons.Outlined.FavoriteBorder,
+                iconBg = DotBlueSoft,
+                iconTint = DotDeepSlate
+            ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -257,7 +275,12 @@ fun DailyLogScreen(
             }
 
             // 3. Anticonceptivos y Postday
-            LogSectionCard(title = "Anticonceptivos y Postday") {
+            LogSectionCard(
+                title = "Anticonceptivos y Postday",
+                icon = Icons.Outlined.Medication,
+                iconBg = DotSageSoft,
+                iconTint = DotSageDark
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -317,7 +340,12 @@ fun DailyLogScreen(
             }
 
             // 4. Síntomas físicos y anímicos
-            LogSectionCard(title = "Síntomas físicos y ánimo") {
+            LogSectionCard(
+                title = "Síntomas físicos y ánimo",
+                icon = Icons.Outlined.Spa,
+                iconBg = DotBlushSurface,
+                iconTint = DotRoseStrong
+            ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -340,7 +368,12 @@ fun DailyLogScreen(
             }
 
             // 5. Notas opcionales
-            LogSectionCard(title = "Notas del día (opcional)") {
+            LogSectionCard(
+                title = "Notas del día",
+                icon = Icons.Outlined.EditNote,
+                iconBg = DotBlueSoft,
+                iconTint = DotDeepSlate
+            ) {
                 OutlinedTextField(
                     value = uiState.notes,
                     onValueChange = viewModel::onNotesChanged,
@@ -393,25 +426,40 @@ fun DailyLogScreen(
 @Composable
 private fun LogSectionCard(
     title: String,
+    icon: ImageVector,
+    iconBg: Color,
+    iconTint: Color,
     content: @Composable () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = DotWhite),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = DotInkBlack
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                DotSoftIconBadge(
+                    icon = icon,
+                    backgroundColor = iconBg,
+                    iconTint = iconTint,
+                    size = 34.dp,
+                    iconSize = 18.dp
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = DotInkBlack
+                )
+            }
             content()
         }
     }
